@@ -1,0 +1,51 @@
+# ---- All project specifications ---- #
+[project]
+name = "source_resegmenter"
+description = "Library to re-segment source sentences to match the segmentation of a reference"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [
+    { name = "Mauro Cettolo", email = "cettolo@fbk.eu" },
+    { name = "Marco Gaido", email = "mgaido@fbk.eu" },
+    { name = "FBK HLT-MT", email = "mt@fbk.eu" },
+]
+keywords = ["segmenter"]
+dependencies = [
+    "mweralign",
+    "torch",
+    "simalign",
+    "sacremoses",
+]
+dynamic = ["version"]
+
+[project.urls]
+GitHub = "https://github.com/hlt-mt/source-resegmenter"
+Issues = "https://github.com/hlt-mt/source-resegmenter/issues"
+
+[project.scripts]
+# Server
+source_resegmenter = "source_resegmenter.resegment:cli_main"
+
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.0",
+    "flake8",
+    "sphinx",
+    "sphinx-rtd-theme",
+    "build",
+    "twine",
+]
+[tool.setuptools.dynamic]
+version = {attr = "source_resegmenter.__version__"}
+
+
+# ---- Explicit project build information ---- #
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = [""]
+
