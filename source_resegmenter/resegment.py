@@ -20,34 +20,36 @@ import mweralign
 import source_resegmenter
 from source_resegmenter import refiner
 
+
 logging.basicConfig(
     format='%(asctime)s | %(levelname)s | %(name)s | %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
     level=logging.INFO,
+    force=True,
 )
 LOGGER = logging.getLogger('source_resegmenter.resegment')
 
 
 def main(args: argparse.Namespace) -> None:
     with open(args.source_texts, 'r') as f:
-        source_texts = f.read()
+        source_texts = f.read().strip()
     with open(args.reference_texts, 'r') as f:
-        reference_texts = f.read()
+        reference_texts = f.read().strip()
     with open(args.backtranslation_texts, 'r') as f:
-        backtranslation_texts = f.read()
+        backtranslation_texts = f.read().strip()
     assert len(backtranslation_texts.split("\n")) == len(reference_texts.split("\n")), \
         "Backtranslation texts must have the same number of lines as reference texts"
 
     # re-segment the source texts with the mwersegmenter
-    logging.info(
+    LOGGER.info(
         f"Resegmenting {args.source_texts} to match {args.backtranslation_texts} with mweralign")
     resegmented_source_texts = mweralign.align_texts(backtranslation_texts, source_texts)
 
-    if args.segmeter == "xl-segmenter":
+    if args.segmenter == "xl-segmenter":
         with open(args.output, 'w') as f:
             f.write(resegmented_source_texts)
-    elif args.segmeter == "xlr-segmenter":
-        logging.info(f"Refining the segmentation with word alignments on {args.reference_texts}")
+    elif args.segmenter == "xlr-segmenter":
+        LOGGER.info(f"Refining the segmentation with word alignments on {args.reference_texts}")
         refined_source_texts = refiner.xlr_refine(
             resegmented_source_texts, reference_texts, args.source_language, args.target_language)
         with open(args.output, 'w') as f:

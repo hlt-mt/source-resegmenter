@@ -21,27 +21,24 @@ import torch
 import time
 
 
-logging.basicConfig(
-    format='%(asctime)s | %(levelname)s | %(name)s | %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    level=logging.INFO,
-)
 LOGGER = logging.getLogger('source_resegmenter.refiner')
 
 
-def count_cross_alignments(index1: int, index2: int, alignments: List[Tuple[int, int]]) -> int:
+def count_cross_alignments(
+        split_str1: int, split_str2: int, alignments: List[Tuple[int, int]]) -> int:
     """
     Counts the number of cross-alignments based on a given index split.
 
-    :param index1: Split index for the first string
-    :param index2: Split index for the second string
+    :param split_str1: Split index for the first string
+    :param split_str2: Split index for the second string
     :param alignments: List of (idx1, idx2) pairs representing the mapping
     :return: Number of cross-alignments
     """
     cross_count = 0
 
     for idx1, idx2 in alignments:
-        if (idx1 <= index1 and idx2 > index2) or (idx1 > index1 and idx2 <= index2):
+        if (idx1 < split_str1 and idx2 >= split_str2) or \
+                (idx1 >= split_str1 and idx2 < split_str2):
             cross_count += 1
 
     return cross_count
@@ -51,15 +48,15 @@ def find_optimal_source_split(
         alignments: List[Tuple[int, int]],
         n_source_words: int,
         target_split_idx: int) -> int:
-    min = n_source_words + 1  # more than any possible value of cross-alignment
+    min_value = n_source_words + 1  # more than any possible value of cross-alignment
     argmin = -1
     # look for the src idx which minimizes the cross alignments:
     for s_idx in range(n_source_words - 1):
-        result = count_cross_alignments(s_idx, target_split_idx - 1, alignments)
-        if (result < min):
-            min = result
+        result = count_cross_alignments(s_idx, target_split_idx, alignments)
+        if result < min_value:
+            min_value = result
             argmin = s_idx
-    return argmin + 1
+    return argmin
 
 
 def xlr_refine(source_texts: str, reference_texts: str, source_lang: str, target_lang: str) -> str:
@@ -67,21 +64,25 @@ def xlr_refine(source_texts: str, reference_texts: str, source_lang: str, target
     source_tokenizer = MosesTokenizer(source_lang)
     target_tokenizer = MosesTokenizer(target_lang)
     LOGGER.info(f"Tokenizing source texts in {source_lang} language")
-    tokenized_source_texts = source_tokenizer.tokenize(source_texts, return_str=True)
+    tokenized_source_texts = [
+        source_tokenizer.tokenize(line, return_str=True) for line in source_texts.split("\n")]
     LOGGER.info(f"Tokenizing reference texts in {target_lang} language")
-    tokenized_reference_texts = target_tokenizer.tokenize(reference_texts, return_str=True)
+    tokenized_reference_texts = [
+        target_tokenizer.tokenize(line, return_str=True) for line in reference_texts.split("\n")]
 
     # refinement of tokenized texts
     start = time.perf_counter()
     tokenized_refined_source_texts = _run_xlr_refine(
-        tokenized_source_texts.split("\n"), tokenized_reference_texts.split("\n"))
+        tokenized_source_texts, tokenized_reference_texts)
     end = time.perf_counter()
     LOGGER.info(f"XLR refinement took {end - start:.6f} seconds")
 
     # de-tokenization after the refinement
     source_detokenizer = MosesDetokenizer(source_lang)
-    return source_detokenizer.detokenize(
-        "\n".join(tokenized_refined_source_texts), return_str=True)
+    detokenized_source_texts = "\n".join([
+        source_detokenizer.detokenize(line.split(), return_str=True)
+        for line in tokenized_refined_source_texts])
+    return detokenized_source_texts
 
 
 def _run_xlr_refine(source_texts: List[str], reference_texts: List[str]) -> List[str]:
