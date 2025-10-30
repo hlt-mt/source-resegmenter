@@ -65,7 +65,7 @@ If you use this library, please cite:
 
 ```
 @inproceedings{cettolo-et-al-2025-xlr-segmenter,
-    title={{On the Reliability of Source-Aware Metrics with Synthetic Transcripts in Speech Translation Evaluation}},
+    title={{How to Evaluate Speech Translation with Source-Aware Neural MT Metrics}},
     author={Cettolo, Mauro and Gaido, Marco and Negri, Matteo and Papi, Sara and Bentivogli, Luisa},
     booktitle = "",
     address = "",
