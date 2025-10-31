@@ -30,6 +30,10 @@ logging.basicConfig(
 LOGGER = logging.getLogger('source_resegmenter.resegment')
 
 
+def _ensure_ends_with_newline(s: str) -> str:
+    return s if s.endswith('\n') else s + '\n'
+
+
 def main(args: argparse.Namespace) -> None:
     with open(args.source_texts, 'r') as f:
         source_texts = f.read().strip()
@@ -47,13 +51,13 @@ def main(args: argparse.Namespace) -> None:
 
     if args.segmenter == "xl-segmenter":
         with open(args.output, 'w') as f:
-            f.write(resegmented_source_texts)
+            f.write(_ensure_ends_with_newline(resegmented_source_texts))
     elif args.segmenter == "xlr-segmenter":
         LOGGER.info(f"Refining the segmentation with word alignments on {args.reference_texts}")
         refined_source_texts = refiner.xlr_refine(
             resegmented_source_texts, reference_texts, args.source_language, args.target_language)
         with open(args.output, 'w') as f:
-            f.write(refined_source_texts)
+            f.write(_ensure_ends_with_newline(refined_source_texts))
     else:
         raise ValueError(f"Unknown segmenter: {args.segmeter}")
 
