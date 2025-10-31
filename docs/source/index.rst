@@ -40,5 +40,4 @@ If you use this library, please cite:
     booktitle = "",
     address = "",
     year={2025}
-}
-
+  }
