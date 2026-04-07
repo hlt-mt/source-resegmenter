@@ -49,17 +49,25 @@ def main(args: argparse.Namespace) -> None:
         f"Resegmenting {args.source_texts} to match {args.backtranslation_texts} with mweralign")
     resegmented_source_texts = mweralign.align_texts(backtranslation_texts, source_texts)
 
-    if args.segmenter == "xl-segmenter":
-        with open(args.output, 'w') as f:
-            f.write(_ensure_ends_with_newline(resegmented_source_texts))
-    elif args.segmenter == "xlr-segmenter":
-        LOGGER.info(f"Refining the segmentation with word alignments on {args.reference_texts}")
-        refined_source_texts = refiner.xlr_refine(
-            resegmented_source_texts, reference_texts, args.source_language, args.target_language)
-        with open(args.output, 'w') as f:
-            f.write(_ensure_ends_with_newline(refined_source_texts))
+    if args.segmenter == "xlr-simalign":
+        LOGGER.info(
+            f"Refining the segmentation with word alignments on {args.reference_texts}")
+        resegmented_source_texts = refiner.xlr_simalign(
+            resegmented_source_texts,
+            reference_texts,
+            args.source_language,
+            args.target_language)
+    elif args.segmenter == "xlr-labse":
+        LOGGER.info(
+            f"Refining the segmentation with LaBSE embeddings on {args.reference_texts}")
+        resegmented_source_texts = refiner.xlr_labse(
+            resegmented_source_texts,
+            reference_texts)
     else:
-        raise ValueError(f"Unknown segmenter: {args.segmeter}")
+        if args.segmenter != "xl-segmenter":
+            raise ValueError(f"Unknown segmenter: {args.segmeter}")
+    with open(args.output, 'w') as f:
+        f.write(_ensure_ends_with_newline(resegmented_source_texts))
 
 
 def cli_main():
@@ -97,11 +105,12 @@ def cli_main():
         help="Path to a txt file containing the sentence-level translations into the source "
              "language of the reference texts.")
     parser.add_argument(
-        "--segmenter", choices=["xl-segmenter", "xlr-segmenter"], default="xlr-segmenter",
+        "--segmenter", choices=["xl-segmenter", "xlr-simalign", "xlr-labse"],
+        default="xlr-simalign",
         help="Type of segmenter to use. `xl-segmenter` refers to the mwersegmenter between the "
-             "source texts and the backtranslation texts, while `xlr-segmenter` refines this "
-             "segmentation by means of word-level alignments between the intermediate result and "
-             "the reference texts. [Default: xlr-segmenter]")
+             "source texts and the backtranslation texts. `xlr-simalign` and `xlr-labse` refine "
+             "this segmentation, respectively by means of word-level alignments or similarity "
+             "of LaBSE embeddings for all possible options. [Default: xlr-simalign]")
     parser.add_argument(
         "--source-language", type=str, required=False, default="en",
         help="Language of the source texts in two-digit code.")

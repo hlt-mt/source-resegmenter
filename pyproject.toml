@@ -16,6 +16,7 @@ dependencies = [
     "torch",
     "simalign",
     "sacremoses",
+    "sentence_transformers",
 ]
 dynamic = ["version"]
 
